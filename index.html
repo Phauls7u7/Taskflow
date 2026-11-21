@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="TaskFlow" />
+  <title>TaskFlow - Lista y Notas PWA</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 11 12 14 22 4"></polyline>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+        </svg>
+      </div>
+      <span>TaskFlow PWA</span>
+    </div>
+    <div class="header-actions">
+      <button id="install-pwa-btn" class="icon-btn" title="Instalar App / Generar APK" onclick="openInstallModal()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+          <line x1="12" y1="18" x2="12.01" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- APARTADO 1: AGREGAR NOTA / TAREA -->
+    <section id="sec-add" class="section active">
+      <div class="section-header">
+        <h1 class="section-title">Agregar Nota</h1>
+        <span class="badge-count" id="form-mode-badge">Nueva</span>
+      </div>
+
+      <div class="card">
+        <form id="note-form">
+          <input type="hidden" id="edit-id" value="" />
+          <div class="form-group">
+            <label for="note-title">Título o tarea pendiente *</label>
+            <input type="text" id="note-title" placeholder="Ej. Comprar repuestos, Revisar proyecto..." required autocomplete="off" />
+          </div>
+
+          <div class="form-group">
+            <label for="note-desc">Detalles o nota adicional (opcional)</label>
+            <textarea id="note-desc" placeholder="Escribe aquí apuntes, pasos o recordatorios..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Categoría</label>
+            <div class="category-pills" id="category-selector">
+              <button type="button" class="cat-pill selected" data-cat="General">General</button>
+              <button type="button" class="cat-pill" data-cat="Personal">Personal</button>
+              <button type="button" class="cat-pill" data-cat="Trabajo">Trabajo</button>
+              <button type="button" class="cat-pill" data-cat="Compras">Compras</button>
+              <button type="button" class="cat-pill" data-cat="Urgente">Urgente</button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary" id="submit-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span id="submit-btn-text">Guardar en Pendientes</span>
+          </button>
+
+          <button type="button" id="cancel-edit-btn" class="btn-secondary" style="display:none; width:100%; margin-top:8px;" onclick="resetForm()">
+            Cancelar edición
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- APARTADO 2: PENDIENTES POR HACER -->
+    <section id="sec-pending" class="section">
+      <div class="section-header">
+        <h1 class="section-title">Pendientes por hacer</h1>
+        <span class="badge-count" id="pending-count-badge">0</span>
+      </div>
+
+      <div class="filter-bar" id="filter-bar">
+        <button class="cat-pill selected" data-filter="Todas">Todas</button>
+        <button class="cat-pill" data-filter="General">General</button>
+        <button class="cat-pill" data-filter="Personal">Personal</button>
+        <button class="cat-pill" data-filter="Trabajo">Trabajo</button>
+        <button class="cat-pill" data-filter="Compras">Compras</button>
+        <button class="cat-pill" data-filter="Urgente">Urgente</button>
+      </div>
+
+      <div id="pending-list" class="task-list"></div>
+    </section>
+
+    <!-- APARTADO 3: COSAS YA HECHAS -->
+    <section id="sec-done" class="section">
+      <div class="section-header">
+        <h1 class="section-title">Cosas ya hechas</h1>
+        <button id="clear-done-btn" class="btn-clear-done" style="display:none;" onclick="clearAllDone()">Limpiar todo</button>
+      </div>
+
+      <div id="done-list" class="task-list"></div>
+    </section>
+  </main>
+
+  <!-- Navegación Inferior de 3 Apartados -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-target="sec-add" onclick="switchTab('sec-add', this)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="16"></line>
+        <line x1="8" y1="12" x2="16" y2="12"></line>
+      </svg>
+      <span>Agregar</span>
+    </button>
+
+    <button class="nav-item" data-target="sec-pending" onclick="switchTab('sec-pending', this)">
+      <span class="nav-badge" id="nav-pending-badge" style="display:none;">0</span>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="8" y1="6" x2="21" y2="6"></line>
+        <line x1="8" y1="12" x2="21" y2="12"></line>
+        <line x1="8" y1="18" x2="21" y2="18"></line>
+        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+      </svg>
+      <span>Pendientes</span>
+    </button>
+
+    <button class="nav-item" data-target="sec-done" onclick="switchTab('sec-done', this)">
+      <span class="nav-badge" id="nav-done-badge" style="display:none; background:#22c55e;">0</span>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
+      <span>Hechas</span>
+    </button>
+  </nav>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Modal Instalación / APK -->
+  <div id="install-modal" class="modal-backdrop" onclick="if(event.target===this) closeInstallModal()">
+    <div class="modal-box">
+      <h3>Instalar en Android o Generar APK</h3>
+      <p>Esta aplicación está configurada como <strong>PWA instalable</strong> compatible con Google Chrome.</p>
+      <ol>
+        <li><strong>Instalar directo desde Chrome:</strong> Abre esta página alojada en HTTPS (GitHub Pages o Netlify), toca el menú <strong>⋮</strong> de Chrome y elige <strong>"Instalar aplicación"</strong> o <strong>"Añadir a pantalla de inicio"</strong>.</li>
+        <li><strong>Convertir a archivo .APK:</strong> Copia la URL pública HTTPS de tu PWA, entra a <strong>pwabuilder.com</strong>, pégala y descarga el paquete <strong>Android APK</strong> listo para instalar.</li>
+      </ol>
+      <div id="native-install-container" style="display:none; margin-bottom:10px;">
+        <button class="btn-primary" onclick="triggerNativeInstall()">Instalar ahora en este dispositivo</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeInstallModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
